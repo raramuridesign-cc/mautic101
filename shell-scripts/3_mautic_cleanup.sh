@@ -35,6 +35,10 @@ echo '>> Cache Warm Up...'
 php ${PATH_PUBLIC}/bin/console cache:warmup
 echo '>> Done'
 echo '------------------------------'
+echo '>> Regenerate Mautic assets...'
+php ${PATH_PUBLIC}/bin/console mautic:assets:generate
+echo '>> Done'
+echo '------------------------------'
 echo 'MAUTIC CLEANUP COMPLETE'
 echo '------------------------------'
 echo ''
