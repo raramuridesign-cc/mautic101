@@ -1,3 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
 ################################################################
 ##    MAUTIC: 
 ##    Clean File & Directory Permissions
@@ -5,10 +8,30 @@
 ################################################################
 ##    UPDATE VARIABLES
       # This is where mautic is installed
+      # Note: Set PATH_PUBLIC to the root directory of your Mautic installation.
+      # If Mautic is installed in the root of your web directory, use the full path to that directory.
+      # If installed in a subfolder, use the full path to the subfolder (e.g., /home/user/public_html/mautic).
       PATH_PUBLIC='/home/xxxxxx/public_html'
       OWNER='xxxxxx'
 ## DO NOT EDIT ANYTHING BELOW THIS LINE
 ################################################################
+
+# Function to handle errors
+error_exit() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+# Check if PATH_PUBLIC exists
+if [[ ! -d "$PATH_PUBLIC" ]]; then
+    error_exit "PATH_PUBLIC directory '$PATH_PUBLIC' does not exist."
+fi
+
+# Check if OWNER user exists
+if ! id "$OWNER" &>/dev/null; then
+    error_exit "OWNER user '$OWNER' does not exist."
+fi
+
 echo '------------------------------'
 echo 'START MAUTIC CLEANUP'
 echo '------------------------------'
