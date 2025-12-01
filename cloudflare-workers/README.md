@@ -76,10 +76,10 @@ el.after(`<style>${css}</style>`, { html: true });
 
 This ensures:
 
-✔ Styles remain scoped to the specific form
-✔ No external CSS files required
-✔ Styles override inline or embedded Mautic styles
-✔ No JS execution needed in browser
+- ✔ Styles remain scoped to the specific form
+- ✔ No external CSS files required
+- ✔ Styles override inline or embedded Mautic styles
+- ✔ No JS execution needed in browser
 
 ---
 
@@ -285,40 +285,7 @@ Our Worker uses this to:
 
 ---
 
-# 🔮 **Future Enhancements**
-
-You can extend this Worker to:
-
-### ✔ Per-form styling
-
-Different CSS per form name:
-
-```
-form[id="mauticform_contactform"] { ... }
-```
-
-### ✔ Inject custom HTML blocks
-
-E.g., GDPR messages, icons, required field notes
-
-### ✔ Add Tailwind or bootstrap utility classes
-
-Right inside the iframe
-
-### ✔ Add button text overrides
-
-E.g., change default Mautic “Submit” → “Send Message”
-
----
-
 # 🎉 **Conclusion**
 
 This Worker gives you **full visual control over Mautic forms** embedded inside your domain using iframes.
 It is clean, server-side only, cache-safe, and works with all browsers since it outputs pure HTML/CSS.
-
-If you want, I can also generate:
-
-* A **dark mode version**
-* A **per-form theme manager**
-* A **version that rewrites form markup** (wrap inputs, add icons)
-* A **version that injects JavaScript** via Cloudflare Worker (advanced)
