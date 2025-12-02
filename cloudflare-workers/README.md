@@ -157,6 +157,8 @@ class InjectCSS {
 }
 ```
 
+**Note:** For production deployment, minify the CSS string to reduce the worker's size and improve performance.
+
 ---
 
 # 🛠 **Deployment Guide: Cloudflare Workers**
