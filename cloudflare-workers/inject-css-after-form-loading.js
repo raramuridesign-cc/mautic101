@@ -1,3 +1,11 @@
+/**
+ * Cloudflare Worker for injecting custom CSS into Mautic forms.
+ *
+ * This worker intercepts HTML responses and injects custom styles into the <head> element,
+ * ensuring Mautic forms are styled consistently regardless of embedding method (iframe or JavaScript).
+ *
+ * Supports forms with IDs starting with "mauticform_".
+ */
 export default {
   async fetch(request, env, ctx) {
 
@@ -10,14 +18,13 @@ export default {
     }
 
     return new HTMLRewriter()
-      .on('form[id^="mauticform_"]', new MauticFormCSS())
+      .on('head', new InjectCSS())
       .transform(response);
   }
 };
 
-class MauticFormCSS {
+class InjectCSS {
   element(el) {
-
     const css = `
       /* ==========================================
          Custom Styles for ALL Mautic Forms
@@ -67,7 +74,7 @@ class MauticFormCSS {
         background-color: #4ee3fd !important;
         color: #0c2135 !important;
       }
-      
+       
       .mauticform-errormsg {
         display: block;
         color: red;
@@ -78,7 +85,6 @@ class MauticFormCSS {
       }
     `;
 
-    // Inject the styles immediately after the form
-    el.after(`<style>${css}</style>`, { html: true });
+    el.append(`<style>${css}</style>`, { html: true });
   }
 }

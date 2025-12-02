@@ -6,29 +6,21 @@
 
 ## 📝 **Overview**
 
-This Cloudflare Worker injects **custom CSS styles** into **Mautic embed forms** that are loaded inside an iframe on pages within `mydomain.com`.
+This Cloudflare Worker injects **custom CSS styles** into **Mautic embed forms** on pages within `mydomain.com`, supporting both iframe and JavaScript embedding methods.
 
-Since Mautic forms are embedded using:
+Mautic forms can be embedded using:
 
 ```html
+<!-- JavaScript embed (loads form dynamically) -->
 <script src="//mydomain.com/go/form/generate.js?id=1"></script>
+
+<!-- Iframe embed -->
 <iframe src="//mydomain.com/go/form/1"></iframe>
 ```
 
-…the iframe loads HTML content served from:
+Forms may be served from various paths on your domain. The Worker intercepts HTML responses and injects CSS into the `<head>` element, ensuring styles are available for both static iframes and dynamically loaded forms.
 
-```
-https://mydomain.com/go/form/*
-```
-
-Because this domain is under your control and behind Cloudflare, a Worker can intercept the HTML **before it reaches the browser**, allowing us to:
-
-* Detect the Mautic form markup
-* Locate the `<form>` with ID prefix `mauticform_`
-* Inject a `<style>` element *directly after the closing `</form>` tag*
-* Apply custom CSS to override Mautic’s default styles
-
-This technique ensures full visual control over embedded forms without modifying Mautic or injecting JavaScript into the client side.
+This technique provides full visual control over embedded forms without modifying Mautic or injecting client-side JavaScript.
 
 ---
 
@@ -52,31 +44,26 @@ if (!contentType.toLowerCase().includes("html")) {
 }
 ```
 
-### **3. HTMLRewriter scans HTML and finds the target form**
+### **3. HTMLRewriter scans HTML and injects CSS into the head**
 
-Mautic forms always follow this pattern:
-
-```html
-<form id="mauticform_[formname]">
-```
-
-The worker uses a prefix selector:
+The worker targets the `<head>` element:
 
 ```javascript
-.on('form[id^="mauticform_"]', new MauticFormCSS())
+.on('head', new InjectCSS())
 ```
 
-### **4. Worker injects CSS directly after the form**
+### **4. Worker injects global CSS into the head**
 
 Using:
 
 ```javascript
-el.after(`<style>${css}</style>`, { html: true });
+el.append(`<style>${css}</style>`, { html: true });
 ```
 
 This ensures:
 
-- ✔ Styles remain scoped to the specific form
+- ✔ Styles are globally available for all Mautic forms on the page
+- ✔ Works for both iframe and JavaScript embedded forms
 - ✔ No external CSS files required
 - ✔ Styles override inline or embedded Mautic styles
 - ✔ No JS execution needed in browser
@@ -98,46 +85,49 @@ export default {
     }
 
     return new HTMLRewriter()
-      .on('form[id^="mauticform_"]', new MauticFormCSS())
+      .on('head', new InjectCSS())
       .transform(response);
   }
 };
 
-class MauticFormCSS {
+class InjectCSS {
   element(el) {
-
     const css = `
       /* ==========================================
          Custom Styles for ALL Mautic Forms
          ========================================== */
 
       /* Text fields */
-      form[id^="mauticform_"] input[type="text"],
-      form[id^="mauticform_"] input[type="email"],
-      form[id^="mauticform_"] input[type="tel"],
-      form[id^="mauticform_"] textarea,
-      form[id^="mauticform_"] select {
+      form[id^="mauticform_"] input[type="text"], form[id^="mauticform_"] input[type="email"], form[id^="mauticform_"] input[type="tel"], form[id^="mauticform_"] textarea, form[id^="mauticform_"] select {
         width: 100% !important;
-        padding: 12px !important;
-        border-radius: 6px !important;
-        border: 2px solid #0066cc !important;
-        margin-bottom: 10px !important;
-        font-size: 16px !important;
+        padding: 5px 10px !important;
+        border-radius: 5px !important;
+        border: 1px solid #4e4e4e !important;
+        margin-bottom: 5px !important;
+        font-size: 14px !important;
         box-sizing: border-box !important;
+      }
+      form[id^="mauticform_"] textarea {
+        height: 125px;
+      }
+      .mauticform-checkboxgrp-checkbox {
+        height: 24px;
+        width: 24px;
       }
 
       /* Labels */
-      form[id^="mauticform_"] label {
+      form[id^="mauticform_"] label, .mauticform-helpmessage {
+        display: inline-block;
+        font-size: 0.9em;
+        margin-bottom: 5px;
+        font-family: arial;
         font-weight: bold !important;
-        margin-bottom: 6px !important;
-        display: block !important;
       }
 
       /* Submit button */
-      form[id^="mauticform_"] button[type="submit"],
-      form[id^="mauticform_"] input[type="submit"] {
-        background-color: #333 !important;
-        color: #fff !important;
+      form[id^="mauticform_"] button[type="submit"], form[id^="mauticform_"] input[type="submit"] {
+        background-color: #0c2135 !important;
+        color: #4ee3fd !important;
         font-size: 16px !important;
         padding: 12px 20px !important;
         border-radius: 6px !important;
@@ -148,12 +138,21 @@ class MauticFormCSS {
       }
 
       form[id^="mauticform_"] button[type="submit"]:hover {
-        background-color: #555 !important;
+        background-color: #4ee3fd !important;
+        color: #0c2135 !important;
+      }
+
+      .mauticform-errormsg {
+        display: block;
+        color: red;
+        margin-top: 2px;
+        font-family: arial;
+        font-size: 0.8rem;
+        font-style: italic;
       }
     `;
 
-    // Inject the styles immediately after the form
-    el.after(`<style>${css}</style>`, { html: true });
+    el.append(`<style>${css}</style>`, { html: true });
   }
 }
 ```
@@ -171,19 +170,19 @@ Replace the placeholder code with the Worker code above.
 
 # 🌐 **Step 2 — Add Worker Routes (Critical)**
 
-To rewrite iframe content, you must bind the Worker to:
+Since Mautic forms can be served from any path on your domain, bind the Worker to cover all routes:
 
 ```
-mydomain.com/go/form/*
-*.mydomain.com/go/form/*
+mydomain.com/*
+*.mydomain.com/*
 ```
 
 This ensures:
 
-* The parent page is rewritten (if needed)
-* The iframe HTML is rewritten
+* All HTML pages on your domain are processed
+* Both iframe and JavaScript embedded forms are styled
 * Any subdomain (e.g., www) is included
-* Bare domain `mydomain.com` is included
+* Forms from any folder/file are covered
 
 ---
 
@@ -192,7 +191,7 @@ This ensures:
 Cloudflare Caching → Page Rules or Cache Rules:
 
 ```
-URL: mydomain.com/go/form/*
+URL: mydomain.com/*
 Setting: Cache Level → Bypass
 ```
 
@@ -203,17 +202,15 @@ Because cached HTML bypasses the Worker rewrite.
 
 # 🧪 **Step 4 — Verify Worker Execution**
 
-Open the iframe URL directly in a browser:
+Open any page with a Mautic form (iframe or JS embed) in a browser.
 
-👉 **[https://mydomain.com/go/form/1](https://mydomain.com/go/form/1)**
-
-View source, scroll to bottom of the form, check for:
+View source, check the `<head>` section for:
 
 ```html
 <style>/* your custom CSS */</style>
 ```
 
-If it appears → Worker is active.
+If it appears → Worker is active and will style both embedding methods.
 
 ---
 
@@ -263,8 +260,8 @@ Cloudflare's HTMLRewriter:
 
 Our Worker uses this to:
 
-* Detect every `<form>` with ID starting `mauticform_`
-* Inject a style block after the element stream
+* Detect the `<head>` element in HTML responses
+* Inject a global style block into the head
 
 ---
 
@@ -287,5 +284,5 @@ Our Worker uses this to:
 
 # 🎉 **Conclusion**
 
-This Worker gives you **full visual control over Mautic forms** embedded inside your domain using iframes.
+This Worker gives you **full visual control over Mautic forms** embedded on your domain using both iframe and JavaScript methods.
 It is clean, server-side only, cache-safe, and works with all browsers since it outputs pure HTML/CSS.
