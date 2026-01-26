@@ -1,0 +1,47 @@
+<IfModule mod_headers.c>
+    # 1. Strict-Transport-Security (HSTS)
+    # Forces the browser to only use HTTPS for the next year (includeSubDomains optional).
+    # Only enable this if you have a valid SSL certificate installed.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+
+    # 2. X-Content-Type-Options
+    # Prevents the browser from sniffing the file type (forces strict MIME type checking).
+    Header always set X-Content-Type-Options "nosniff"
+
+    # 3. Referrer-Policy
+    # Controls how much referrer information is sent when navigating away.
+    # 'strict-origin-when-cross-origin' is the recommended balance of security and utility.
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # 4. Permissions-Policy (formerly Feature-Policy)
+    # Disables browser features that Mautic generally does not need, reducing the attack surface.
+    # This disables Geolocation, Camera, Microphone, and Payment APIs by default.
+    Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()"
+
+    # 5. Content-Security-Policy (CSP)
+    # This is the CRITICAL section for your embedding requirement.
+    
+    # Note on Mautic Compatibility: 
+    # Mautic's Admin Dashboard relies heavily on inline scripts and styles. 
+    # A strict CSP (without 'unsafe-inline') will break your Mautic backend.
+    # The configuration below allows the backend to function while securing the frontend.
+
+    # CHANGE 'https://site-a.com' TO YOUR ACTUAL DOMAIN(S).
+    # Use spaces to separate multiple domains, e.g., 'self' https://site-a.com https://site-b.com
+    
+    Header always set Content-Security-Policy "default-src 'self'; \
+    frame-ancestors 'self' https://site-a.com; \
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; \
+    style-src 'self' 'unsafe-inline' https:; \
+    img-src 'self' data: https:; \
+    font-src 'self' data: https:; \
+    connect-src 'self' https:;"
+
+    # 6. X-Frame-Options (Legacy)
+    # Since we are using CSP 'frame-ancestors' above, this is technically redundant for modern browsers.
+    # However, keeping it as SAMEORIGIN acts as a fallback for very old browsers 
+    # and provides Defense-in-Depth.
+    # Do NOT use ALLOW-FROM here; it is obsolete.
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+</IfModule>

@@ -8,12 +8,13 @@ This repository is organized into the following folders:
 
 - **[shell-scripts](shell-scripts/README.md)** - Bash scripts for Mautic server maintenance, cleanup, and optimization
 - **[cloudflare-workers](cloudflare-workers/README.md)** - Cloudflare Worker scripts for integrating with Mautic
+- **[htaccess](htaccess/README.md)** - Apache `.htaccess` template for Mautic security headers and embedding
 
 Each folder contains its own README with detailed documentation, usage instructions, and configuration guides.
 
 ## Important Safety Notice
 
-⚠️ **Always test these scripts in a staging environment before deploying to production.**
+IMPORTANT: Always test these scripts in a staging environment before deploying to production.
 
 These tools can make significant changes to your Mautic installation. Ensure you have:
 - Recent backups of your Mautic database and files
@@ -41,4 +42,3 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 ## Disclaimer
 
 These scripts are provided "as is" without warranty. Use at your own risk. The maintainers are not responsible for any damage or data loss resulting from the use of these tools.
-
